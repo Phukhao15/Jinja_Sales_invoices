@@ -1,0 +1,71 @@
+{# ------------------- Summary from Sales Invoice Item -------------------- #}
+<div class="margin-top">
+    <table class='table table-bordered table-condensed'>
+        <caption><strong>Summary from Sales Invoice Item</strong></caption>
+        {% set adebit = [0] %}  
+        {% set acredit = [0] %}
+        <tr>
+            <th>No.</th>
+            <th>Account</th>
+            <th>Debit Amount</th>
+            <th>Credit Amount</th>
+        </tr>
+        {% set dd = doc.base_grand_total %}
+        {% if dd > 0 %} {% set debit  = dd %}   {% set credit = 0  %}
+        {% else %}      {% set debit  = 0 %}    {% set credit = dd * -1 %}
+        {% endif %}
+        <tr>
+            <td style="text-align:center">1</td>
+            <td>{{ doc.debit_to }}</td>
+            <td style="text-align:right">{{frappe.utils.fmt_money(debit,format='Thai')}}</td>
+            <td style="text-align:right">{{frappe.utils.fmt_money(credit,format='Thai')}}</td>
+        </tr>
+        {% if adebit.append(adebit[-1]    + debit  )  %}{% endif %}
+        {% if acredit.append(acredit[-1]  + credit )  %}{% endif %}
+        {% set ll = [1] %} 
+
+        {# ----------------- each item from taxes -------------- #}
+        {% for item in doc.taxes %}
+            {% set dd = item.tax_amount %}
+            {% if dd > 0 %} {% set credit  = dd %}   {% set debit = 0  %}
+            {% else %}      {% set credit  = 0 %}    {% set debit = dd * -1 %}
+            {% endif %}
+            {% if ll.append ( ll[-1]  + 1 )  %}{% endif %}
+            <tr>
+                <td style="text-align:center">{{ ll[-1] }}</td>
+                <td>{{ item.account_head }}</td>
+                <td style="text-align:right">{{frappe.utils.fmt_money(debit,format='Thai')}}</td>
+                <td style="text-align:right">{{frappe.utils.fmt_money(credit,format='Thai')}}</td>
+            </tr>
+            {% if adebit.append(adebit[-1]    + debit  )  %}{% endif %}
+            {% if acredit.append(acredit[-1]  + credit )  %}{% endif %}
+        {% endfor %}
+        {% if ll.append ( ll[-1]  + 1 )  %}{% endif %}
+
+        {# ----------------- each item from items - group by account_head -------------- #}
+        {% set invrow = frappe.db.sql("SELECT  income_account aaa, sum(base_net_amount) ddd
+              from `_1bd3e0294da19198`.`tabSales Invoice Item`
+              WHERE  parent = %s group by income_account",  (doc.name), as_dict=1) %}
+        {%- for row in invrow -%}
+            {% if ll.append(ll[-1] + 1 ) %}{% endif %}
+            {% set dd = row.ddd %}
+            {% if dd > 0 %} {% set credit  = dd %}   {% set debit = 0  %}
+            {% else %}      {% set credit  = 0 %}    {% set debit = dd * -1 %}
+            {% endif %}
+            {% if adebit.append(adebit[-1]    + debit  )  %}{% endif %}
+            {% if acredit.append(acredit[-1]  + credit )  %}{% endif %}
+        <tr>
+            <td style="text-align:center">{{ll[-1]}}</td>
+            <td>{{row.aaa}}</td>
+            <td style="text-align:right">{{frappe.utils.fmt_money(debit,format='Thai')}}</td>
+            <td style="text-align:right">{{frappe.utils.fmt_money(credit,format='Thai')}}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td> </td>
+            <td style="text-align:right"><strong>Total</strong></td>
+            <td style="text-align:right">{{frappe.utils.fmt_money(adebit[-1],format='Thai')}}</td>
+            <td style="text-align:right">{{frappe.utils.fmt_money(acredit[-1],format='Thai')}} </td>
+        </tr>
+    </table>
+</div>

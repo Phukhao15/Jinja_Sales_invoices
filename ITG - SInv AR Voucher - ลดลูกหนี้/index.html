@@ -1,0 +1,39 @@
+<div class="print-heading">		
+
+    {% if doc.name[:6] == 'ITG-CN' %} {% set xhead  = 'ใบสำคัญลดลูกหนี้' %}    {% set xsubhead  = 'Account Receivable Cr. Voucher' %}
+    {% else %}  {% if doc.name[:6] == 'ITG-DN' %} {% set xhead  = 'ใบสำคัญเพิ่มลูกหนี้' %}    {% set xsubhead  = 'Account Receivable Voucher' %}
+    {% else %}                       {% set xhead     = 'Purchase Invoice' %} {% set xsubhead  = doc.name %}
+    {% endif %} {% endif %}
+		
+    <h2><div>{{ xhead }}</div>
+	    <div>{{ xsubhead }}</div>
+    {# <small class="sub-heading">{{ doc.name }}</small> #}			
+    </h2></div>
+    {%- if doc.docstatus == 0 -%}
+	<div class="text-center" document-status="draft">
+		<h4 style="margin: 0px;"> == DRAFT == </h4>
+	</div>
+	{%- endif -%}
+
+    <div class="row margin-bottom">
+        <div class="col-xs-6">
+            <table>
+            <tr><td><strong>Customer Name: </strong></td><td>{{ doc.customer }} / {{ doc.customer_name }}</td></tr>
+            <tr><td><strong>Address: </strong></td><td>{{doc.address_display}}</td></tr>
+			<tr><td><strong>Tax Id: </strong> </td><td>{{doc.tax_id}}</td></tr>
+			  <tr><td style="white-space: nowrap;"><strong>NAV Reference: </strong> </td><td>{{doc.nav_ref}}</td></tr>
+            </table>
+        </div>
+        <div class="col-xs-6">
+            <table>
+                <tr><td><strong>Document No: </strong></td><td>{{ doc.name }}</td></tr>
+                <tr><td><strong>Posting Date: </strong></td><td>{{frappe.utils.format_date(doc.posting_date) }}</td></tr>
+				<tr><td><strong>Payment Term: </strong></td><td>{{ doc.payment_terms_template }}</td></tr>
+				<tr><td><strong>Due Date: </strong></td><td>{{ frappe.utils.format_date(doc.due_date) }}</td></tr>
+				<tr><td><strong>Exch. Rate: </strong></td><td>{{ doc.currency }}</td></tr>
+	    	{% for sales in doc.sales_team %}
+                <tr><td><strong>Salesperson: </strong></td><td>{{ sales.sales_person }}</td></tr>
+			{% endfor %}
+			</table>
+        </div>
+    </div>
