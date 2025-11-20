@@ -1,0 +1,90 @@
+<style>
+body {
+    font-family: "TH Sarabun New", "TH Sarabun", Arial, sans-serif;
+    font-size: 14px;
+}
+</style>
+
+<div class="print-heading" style="text-align: right;">		
+  {% if doc.name[:7] == 'ITG-CNA' %}
+    {% set xhead = 'ไม่รองรับ ITG-CNA' %}
+    {% set xsubhead = 'กรุณาใช้เฉพาะ ITG-CN เท่านั้น' %}
+  {% elif doc.name[:6] == 'ITG-CN' %}
+    {% set xhead = 'ใบลดหนี้' %}
+    {% set xsubhead = 'Credit Note' %}
+  {% else %}
+    {% set xhead = 'ทำงานกับ ITG-CN เท่านั้น' %}
+    {% set xsubhead = doc.name %}
+  {% endif %}
+
+    <h2>
+        <div>{{xhead}}</div>
+        <div>{{xsubhead}}</div>
+    </h2>
+</div>
+
+{%- if doc.docstatus == 0 -%}
+<div class="text-center" document-status="draft">
+    <h4 style="margin: 0px;"> == DRAFT == </h4>
+</div>
+{%- endif -%}
+
+<div class="row margin-bottom">
+    <div class="col-xs-6">
+        {% set w_addr   = frappe.db.get_value('Customer', doc.customer,'customer_primary_address') %}
+        {% set w_branch = frappe.db.get_value('Address',  w_addr,      'branch') %}
+        
+        
+        {# แปลง Address Display - แปลง branch code และจัดรูปแบบ #}
+        {% set address_text = doc.address_display if doc.address_display else '' %}
+        
+        {# แทนที่ branch code ด้วยข้อความภาษาไทย #}
+        {% if '00000' in address_text %}
+            {% set address_text = address_text.replace('00000', 'สำนักงานใหญ่') %}
+        {% endif %}
+        
+        {# แปลง 00001-00009 เป็นสาขาที่ X #}
+        {% for i in range(1, 10) %}
+            {% set branch_code = '0000' + i|string %}
+            {% if branch_code in address_text %}
+                {% set address_text = address_text.replace(branch_code, 'สาขาที่ ' + i|string) %}
+            {% endif %}
+        {% endfor %}
+        
+        {# แยกเป็นบรรทัดและกรองบรรทัดว่าง #}
+        {% set address_lines = address_text.split('\n') %}
+        {% set cleaned_address = [] %}
+        {% for line in address_lines %}
+            {% set trimmed = line.strip() %}
+            {% if trimmed %}
+                {% if cleaned_address.append(trimmed) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+        {% set formatted_address = '<br>'.join(cleaned_address) %}
+        
+        <table>
+            <tr><td><strong>Cust No: </strong></td><td>{{ doc.customer }}</td></tr>
+            <tr><td><strong>Cust Name: </strong></td><td>{{ doc.customer_name }}</td></tr>
+            <tr><td style="vertical-align: top;"><strong>Address: </strong></td><td>{{ formatted_address }}</td></tr>
+            <tr><td><strong>Tax Id: </strong> </td><td>{{doc.tax_id}}</td></tr>
+            <tr><td style="white-space: nowrap;"><strong>NAV Reference: </strong> </td><td>{{doc.nav_ref}}</td></tr>
+        </table>
+    </div>
+    
+    <div class="col-xs-6">
+        {% set w_wh = ["N/A"] %}
+        {% for item in doc.items %}
+            {% if item.warehouse %} {% if w_wh.append ( item.warehouse )  %} {% endif %} {% endif %}
+        {% endfor %}
+        {% set w_sa = ["N/A"] %}
+        {% for sales in doc.sales_team %}
+            {% if sales.sales_person %} {% if w_sa.append ( sales.sales_person )  %} {% endif %} {% endif %}
+        {% endfor %}
+        
+        <table>
+            <tr><td><strong>Sales: </strong> </td>    <td>{{w_sa[-1]}}</td></tr>
+            <tr><td><strong>Warehouse: </strong></td> <td>{{w_wh[-1]}}</td></tr>    
+            <tr><td><strong>Address:   </strong></td> <td>23/87-89 Soi Soonvijai, Rama 9 road, Bankkapi Huay-Kwang Bangkok 10320</td></tr>
+        </table>
+    </div>
+</div>

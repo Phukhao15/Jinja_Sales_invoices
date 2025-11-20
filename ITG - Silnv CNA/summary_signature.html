@@ -1,0 +1,95 @@
+<style>
+body {
+    font-family: "TH Sarabun New", "TH Sarabun", Arial, sans-serif;
+    font-size: 14px;
+}
+.summary-signature-container {
+    page-break-inside: avoid;
+    display: table;
+    width: 100%;
+}
+.summary-signature-container::before {
+    content: '';
+    display: block;
+    height: 0;
+    page-break-after: avoid;
+}
+</style>
+
+<div class="summary-signature-container">
+    {# Financial Summary - คำนวณค่าจาก items #}
+    {% set asumm = [0] %}
+    
+    {% for item in doc.items %}
+        {% if item.base_net_amount != 999999999 %}
+            {% set xamt = item.base_amount %}
+            {% if xamt < 0 %} {% set xamt = xamt * -1 %} {% endif %}
+            {% if asumm.append(asumm[-1] + xamt) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    
+    {% set sub_total = asumm[-1] %}
+    {% set old_amt = 0.00 %}
+    
+    {% if doc.itg_old_taxinv %}
+        {% set old_amt = frappe.db.get_value('Sales Invoice', doc.itg_old_taxinv,'base_net_total') %}
+        {% if old_amt < 0 %} {% set old_amt = old_amt * -1 %} {% endif %}
+    {% endif %}
+    
+    {% set corr_amt_abs = frappe.utils.thai_abs(old_amt - sub_total) %}
+    {% set vat_amt_abs = frappe.utils.thai_abs(doc.total_taxes_and_charges) %}
+    {% set disc_amt = frappe.utils.thai_abs(doc.discount_amount) %}
+    {% set grand_amt = sub_total + vat_amt_abs - disc_amt %}
+    
+    <div class="row margin-bottom">
+        <div class="col-xs-6">
+            <table>
+                <tr><td>&nbsp;</td></tr>
+                <tr><td>&nbsp;</td></tr>
+                <tr><td>&nbsp;</td></tr>
+                <tr><td>&nbsp;</td></tr>
+                <tr><td>&nbsp;</td></tr>
+                <tr><td>&nbsp;</td></tr>
+               <tr>
+  <td><strong style="margin-left:20px;">Amount: </strong></td>
+  <td>{{ frappe.utils.money_in_thai(grand_amt) }}</td>
+</tr>
+
+            </table>
+        </div>
+        <div class="col-xs-6">
+            <table style="margin-right: 15px; width: 100%; ">
+                <tr><td style="text-align:right; padding-right:10px"><strong>The Value in the old tax invoice: </strong>  </td><td style="text-align:right; padding-right:5px;"> {{ frappe.utils.fmt_money(old_amt) }} </td></tr>
+                <tr><td style="text-align:right; padding-right:10px"><strong>The correct value </strong>       </td><td style="text-align:right; padding-right:5px"> {{ frappe.utils.fmt_money(corr_amt_abs) }}  </td></tr>
+                <tr><td style="text-align:right; padding-right:10px"><strong>Sub Total </strong></td>          <td style="text-align:right; padding-right:5px"> {{ frappe.utils.fmt_money(sub_total) }} </td></tr>
+                <tr><td style="text-align:right; padding-right:10px"><strong>Discount </strong></td>           <td style="text-align:right; padding-right:5px"> {{ frappe.utils.fmt_money(disc_amt) }} </td></tr>
+                <tr><td style="text-align:right; padding-right:10px"><strong>Total </strong></td>              <td style="text-align:right; padding-right:5px"> {{ frappe.utils.fmt_money(sub_total - disc_amt) }} </td></tr>
+                <tr><td style="text-align:right; padding-right:10px"><strong>VAT 7% </strong></td>             <td style="text-align:right; padding-right:5px"> {{ frappe.utils.fmt_money(vat_amt_abs) }} </td></tr>
+                <tr><td style="text-align:right; padding-right:10px"><strong>Grand Total </strong></td>        <td style="text-align:right; padding-right:5px"> {{ frappe.utils.fmt_money(grand_amt) }} </td></tr>
+            </table>
+        </div>
+    </div>
+
+    {# Signature Section #}
+    <div style="margin-top: 40px;">
+        <table style="text-align: center; width: 100%;">
+            <tbody>
+                <tr>
+                    <td>Issued By</td>
+                    <td>Verified By</td>
+                    <td>Approved By</td>
+                </tr>
+                <tr>
+                    <td>_________________________</td>
+                    <td>__________________________</td>
+                    <td>_______________________</td>
+                </tr>
+                <tr>
+                    <td>Date ....../....../......</td>
+                    <td>Date ....../....../......</td>
+                    <td>Date ....../....../......</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

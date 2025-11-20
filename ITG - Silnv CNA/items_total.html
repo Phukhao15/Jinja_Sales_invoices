@@ -1,0 +1,75 @@
+<style>
+body {
+    font-family: "TH Sarabun New", "TH Sarabun", Arial, sans-serif;
+    font-size: 14px;
+}
+thead {display: table-header-group;}
+</style>
+
+{# ------------------- table 1 : each line from Sales Invoice Item -------------------- #}
+<table class="table table-bordered table-condensed">
+    <thead class="repeat table_header">
+    <tr>
+        <th style="font-size:10px;">No</th>
+        <th style="font-size:10px;">Item No.</th>
+        <th style="font-size:10px;">Description</th>
+        <th style="font-size:10px;">Qty</th>
+        <th style="font-size:10px;">UOM</th>
+        <th style="font-size:10px;">Unit Price</th>
+        <th style="font-size:10px;">Dis</th>
+        <th>Amount</th>
+    </tr>
+    </thead>
+    {% set outsumm = [0] %}
+    {% set asumm = [0] %}
+    {% if doc.itg_description %}
+    <tr>
+        <td></td> <td></td>
+        <td colspan="4">{{ doc.itg_description }}  </td>
+    </tr>
+    {% endif %}
+    {% set ll = [0] %}
+    {% for item in doc.items %}
+    {% if item.base_net_amount != 999999999 %}
+        {% if ll.append ( ll[-1]  + 1 )  %}{% endif %}
+        {% set xqty = item.qty %}
+        {% set xamt = item.base_amount %}
+        {% if xqty < 0 %} {% set xqty = xqty * -1 %} {% endif %}
+        {% if xamt < 0 %} {% set xamt = xamt * -1 %} {% endif %}
+        <tr>
+            <td  style="font-size:9px;">{{ loop.index }}</td>
+            <td style="font-size:9px;">{{ item.item_code }}</td>
+            <td style="font-size:9px;">{{ item.description }}</td>
+            <td style="font-size:9px;">{{ frappe.utils.fmt_money(xqty,format='Integer') }}</td>
+            <td style="font-size:9px;">{{ item.uom }}</td>
+            <td style="text-align:right; font-size:9px;">{{ frappe.utils.fmt_money(item.rate) }}</td>
+            <td style="text-align:right; font-size:9px; ">{{ frappe.utils.fmt_money(0) }}</td>
+            <td style="text-align:right; font-size:9px;">{{ frappe.utils.fmt_money(xamt) }}</td>
+        </tr>
+        {% if asumm.append(asumm[-1]  + xamt) %}{% endif %}
+    {% endif %}
+    {% endfor %}
+    <tr>
+        <td></td>
+        <td style="text-align:right"><strong>Total</strong></td>
+        <td></td> <td></td> <td></td> <td></td> <td></td>
+        <td style="text-align:right"><strong>{{ frappe.utils.fmt_money(asumm[-1]) }}</strong></td>
+    </tr>
+</table>
+
+{# Summary Section - ส่งค่าไปยัง signature.html #}
+{% set sub_total  = asumm[-1] %}
+{% set old_amt    = 0.00 %}
+{% if doc.itg_old_taxinv %}
+    {% set old_amt = frappe.db.get_value('Sales Invoice', doc.itg_old_taxinv,'base_net_total') %}
+    {% if old_amt < 0 %} {% set old_amt = old_amt * -1 %} {% endif %}
+{% endif %}
+
+{% set corr_amt     = old_amt - sub_total %}
+{% set corr_amt_abs = frappe.utils.thai_abs(old_amt - sub_total) %}
+{% set vat_amt      = doc.total_taxes_and_charges %}
+{% set vat_amt_abs  = frappe.utils.thai_abs(doc.total_taxes_and_charges) %}
+{% set disc_amt     = frappe.utils.thai_abs(doc.discount_amount) %}
+{% set grand_amt    = sub_total + vat_amt_abs - disc_amt %}
+
+</div>
