@@ -65,7 +65,7 @@
 | ITG - SInv DN             | Sales Invoice (DN)           | สร้างใหม่, ปรับหัว, จัดรูปแบบ |
 | ITG - SInv CNA            | Sales Invoice  CNA                        | สร้างใหม่, ปรับหัว, ปรับ Layout |
 | ITG - SInv AR Voucher     | Sales Invoice ตั้ง/ลด ลูกหนี้         | แก้ Footer Signature, ปิด Letter Head |
-| ITG - Silnv - ใบกำกับภาษี     | Sales Invoice  ใบกำกับภาษี        | แก้ Footer Signature, ปิด Letter Head |
+| ITG - Silnv - ใบกำกับภาษี     | Sales Invoice  ใบกำกับภาษี        | ทำใหม่ทั้งหมด / ตามต้นฉบับ NAV |
 
 ---
 
