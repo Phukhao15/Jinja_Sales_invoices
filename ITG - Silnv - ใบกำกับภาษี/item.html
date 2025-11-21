@@ -1,0 +1,140 @@
+{% set w_si_no = [""] %}
+{% for item in doc.items | sort(attribute='item_code') %}
+    {% if w_si_no.append(item.sales_invoice) %}{% endif %}
+{% endfor %}
+{% set w_si_NAV = frappe.db.get_value("Sales Invoice", w_si_no[-1], "set_warehouse") %}
+
+<style>
+  /* Items table styles */
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #000;
+    margin-bottom: 15px;
+    font-family: "Sarabun", "TH SarabunPSK", Arial, sans-serif;
+  }
+  
+  .items-table th,
+  .items-table td {
+    border: 1px solid #000;
+    padding: 6px 8px;
+    text-align: left;
+    font-size: 10px;
+  }
+  
+  .items-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .items-table .text-center {
+    text-align: center;
+  }
+  
+  .items-table .text-right {
+    text-align: right;
+  }
+  
+  .items-table .text-left {
+    text-align: left;
+  }
+  
+  /* Column widths */
+  .col-no { width: 4%; }
+  .col-code { width: 20%; }
+  .col-description { width: 30%; }
+  .col-warehouse { width: 15%; }
+  .col-qty { width: 8%; }
+  .col-rate { width: 9%; }
+  .col-amount { width: 12%; }
+  
+  .warehouse-info {
+    font-size: 9px;
+    color: #666;
+    font-style: italic;
+  }
+  
+  /* Print specific */
+  @media print {
+    .items-table { font-size: 9px; }
+    .items-table th,
+    .items-table td { padding: 4px 6px; }
+    .warehouse-info { font-size: 8px; }
+  }
+</style>
+
+<!-- ITEMS SECTION START -->
+{%- if doc.items -%}
+<table class="items-table">
+  <thead>
+    <tr>
+      <th class="col-no">ลำดับ</th>
+      <th class="col-code">รหัสสินค้า</th>
+      <th class="col-description">รายการ</th>
+      <th class="col-warehouse">คลังสินค้า</th>
+      <th class="col-qty">จำนวน</th>
+      <th class="col-rate">ราคาต่อหน่วย</th>
+      <th class="col-amount">จำนวนเงิน</th>
+    </tr>
+  </thead>
+  <tbody>
+    {%- for item in doc.items -%}
+    <tr>
+      <td class="text-center">{{ loop.index }}</td>
+      <td class="text-left">{{ item.item_code or '' }}</td>
+      <td class="text-left">
+        {%- if item.item_name -%}
+          {{ item.item_name }}
+        {%- elif item.description -%}
+          {{ item.description }}
+        {%- else -%}
+          {{ item.item_code or '' }}
+        {%- endif -%}
+      </td>
+      <td class="text-center">
+        <div>{{ item.warehouse or '' }}</div>
+        <div class="warehouse-info"> {{ w_si_NAV or '' }}</div>
+      </td>
+      <td class="text-center">
+        {%- if item.qty -%}
+          {{ frappe.utils.fmt_money(item.qty, 2) }}
+        {%- else -%}
+          0.00
+        {%- endif -%}
+      </td>
+      <td class="text-right">
+        {%- if item.rate -%}
+          {{ frappe.utils.fmt_money(item.rate, 2) }}
+        {%- else -%}
+          0.00
+        {%- endif -%}
+      </td>
+      <td class="text-right">
+        {%- if item.amount -%}
+          {{ frappe.utils.fmt_money(item.amount, 2) }}
+        {%- else -%}
+          0.00
+        {%- endif -%}
+      </td>
+    </tr>
+    {%- endfor -%}
+    
+    <!-- Empty rows for better spacing (optional) -->
+    {%- if doc.items|length < 10 -%}
+      {%- for i in range(10 - doc.items|length) -%}
+      <tr>
+        <td class="text-center">&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td class="text-center">&nbsp;</td>
+        <td class="text-center">&nbsp;</td>
+        <td class="text-right">&nbsp;</td>
+        <td class="text-right">&nbsp;</td>
+      </tr>
+      {%- endfor -%}
+    {%- endif -%}
+  </tbody>
+</table>
+{%- endif -%}
+<!-- ITEMS SECTION END -->

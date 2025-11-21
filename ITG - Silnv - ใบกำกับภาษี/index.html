@@ -1,0 +1,185 @@
+<style>
+  /* Base */
+  * { box-sizing: border-box; }
+  body { margin:0; padding:8px; font-family:"Sarabun","TH SarabunPSK",Arial,sans-serif; font-size:11px; color:#000; }
+  .print-format { border:none !important; padding:0 !important; margin:0 !important; }
+
+  .document-container{ width:100%; max-width:210mm; margin:0 auto; padding:10px; background:#fff; }
+
+  /* Header (table-based, no flex) */
+  .company-header{ width:100%; border-bottom:2px solid #000; margin-bottom:12px; }
+  .company-header table{ width:100%; border-collapse:collapse; }
+  .company-header td{ vertical-align:top; padding:0; }
+
+  .company-details h3{ margin:0 0 5px 0; font-size:16px; font-weight:bold; }
+  .company-details p{ margin:2px 0; font-size:10px; line-height:1.3; }
+
+  .document-stamp-area{ width:200px; }
+  .document-stamp{ background:#f8f9fa; border:2px solid #000; padding:8px 12px; text-align:center; margin-bottom:6px; }
+  .document-stamp .title{ font-weight:bold; font-size:12px; line-height:1.2; }
+
+  .doc-info-table{ width:100%; border-collapse:collapse; table-layout:fixed; }
+  .doc-info-table td{ border:1px solid #000; padding:6px 8px; font-size:10px; text-align:center; white-space:nowrap; overflow:hidden; }
+  .doc-info-table .date{ width:85px; }
+  .doc-info-table .docno{ width:115px; }
+
+  /* Customer & Document Info (table-based) */
+  .two-col{ width:100%; border-collapse:separate; border-spacing:0 0; margin-bottom:12px; }
+  .two-col td{ vertical-align:top; }
+
+  .customer-info{ border:1px solid #000; padding:10px; }
+  .customer-info .field-label{ font-weight:bold; }   /* ✅ เปลี่ยนจาก .label */
+  .customer-info .block{ margin-bottom:8px; }
+  .customer-info .indent{ margin-left:60px; }
+
+  .detail-box{ border:1px solid #000; }
+  .detail-row{ display:table; width:100%; border-bottom:1px solid #000; }
+  .detail-row:last-child{ border-bottom:none; }
+  .detail-cell{ display:table-cell; width:50%; border-right:1px solid #000; padding:6px 8px; font-size:10px; }
+  .detail-cell:last-child{ border-right:none; }
+  .detail-cell .field-label{ display:block; font-weight:bold; margin-bottom:2px; }
+  .detail-cell .value{ display:block; text-align:center; }
+
+  .info-row{ border-bottom:1px solid #000; padding:6px 8px; font-size:10px; }
+  .info-row:last-child{ border-bottom:none; }
+  .info-row .field-label{ display:block; font-weight:bold; margin-bottom:2px; }
+  .info-row .value{ display:block; text-align:center; }
+
+  .draft-watermark{ text-align:center; color:#666; font-size:14px; font-weight:bold; margin-bottom:10px; text-transform:uppercase; }
+
+  /* ✅ reset .label ที่ Bootstrap แทรกมา */
+  .print-format .label {
+    background:none !important;
+    border:none !important;
+    padding:0 !important;
+    color:inherit !important;
+    border-radius:0 !important;
+    font-weight:inherit !important;
+    display:inline !important;
+  }
+
+  @media print{
+    body{ margin:0; padding:0; }
+    .document-container{ padding:8px; max-width:none; }
+  }
+</style>
+
+<div class="document-container">
+  {%- if doc.docstatus == 0 -%}
+    <div class="draft-watermark">== DRAFT ==</div>
+  {%- endif -%}
+
+  <!-- HEADER -->
+  <div class="company-header">
+    <table>
+      <tr>
+        <td>
+          <div class="company-details">
+            {%- if doc.company_gstin -%}
+              <p><strong>เลขประจำตัวผู้เสียภาษี:</strong> {{ doc.company_gstin }}</p>
+            {%- endif -%}
+          </div>
+        </td>
+        <td style="width:210px;">
+          <div class="document-stamp-area">
+            <div class="document-stamp">
+              <div class="title">ต้นฉบับ<br>ใบกำกับภาษี/ใบส่งของ</div>
+            </div>
+            <table class="doc-info-table">
+              <tr>
+                <td class="date">{{ frappe.utils.formatdate(doc.posting_date) }}</td>
+                <td class="docno">{{ doc.name }}</td>
+              </tr>
+            </table>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <!-- /HEADER -->
+
+  <!-- CUSTOMER + DOCUMENT INFO -->
+  <table class="two-col">
+    <tr>
+      <td style="width:65%; padding-right:10px;">
+        <div class="customer-info">
+          <div class="block">
+            <span class="field-label">ขายให้:</span> {{ doc.customer_name }}
+          </div>
+
+          {%- if doc.address_display -%}
+          <div class="block indent">
+            {{ doc.address_display | replace("<br>", "<br>") | safe }}
+          </div>
+          {%- endif -%}
+
+          {%- if doc.tax_id -%}
+          <div class="block">
+            <span class="field-label">เลขประจำตัวผู้เสียภาษี:</span> {{ doc.tax_id }}
+          </div>
+          {%- endif -%}
+        </div>
+      </td>
+
+      <td style="width:35%;">
+        <div class="document-details">
+          <div class="detail-box">
+
+            <!-- แถวที่ 1 -->
+            <div class="detail-row">
+              <div class="detail-cell">
+                <span class="field-label">รหัสลูกค้า</span>
+                <span class="value">{{ doc.customer }}</span>
+              </div>
+              <div class="detail-cell">
+                <span class="field-label">รหัสพนักงาน</span>
+                <span class="value">
+                  {%- if doc.sales_team and doc.sales_team|length > 0 -%}
+                    {%- for s in doc.sales_team -%}
+                      {%- if s.sales_person -%}
+                        {{ s.sales_person }}{% if s.allocated_percentage %} ({{ s.allocated_percentage }}%){% endif %}{% if not loop.last %}, {% endif %}
+                      {%- endif -%}
+                    {%- endfor -%}
+                  {%- else -%}
+                    -
+                  {%- endif -%}
+                </span>
+              </div>
+            </div>
+
+            <!-- แถวที่ 2 -->
+            <div class="detail-row">
+              <div class="detail-cell">
+                <span class="field-label">กำหนดชำระ</span>
+                <span class="value">{{ doc.payment_terms_template or '-' }}</span>
+              </div>
+              <div class="detail-cell">
+                <span class="field-label">วันครบกำหนด</span>
+                <span class="value">{{ doc.due_date and frappe.utils.formatdate(doc.due_date) or '-' }}</span>
+              </div>
+            </div>
+
+            <!-- แถวที่ 3 -->
+            <div class="info-row">
+              <span class="field-label">เลขที่ใบสั่งซื้อ/สัญญา</span>
+              <span class="value">
+                {%- set so_list = [] -%}
+                {%- for item in doc.items if item.sales_order -%}
+                  {%- set _ = so_list.append(item.sales_order) -%}
+                {%- endfor -%}
+                {{ so_list|unique|join(', ') or '-' }}
+              </span>
+            </div>
+
+            <!-- แถวที่ 4 -->
+            <div class="info-row">
+              <span class="field-label">เลขที่งาน (Job No.)</span>
+              <span class="value">{{ doc.project or (doc.items|map(attribute="project")|first) or '-' }}</span>
+            </div>
+
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
